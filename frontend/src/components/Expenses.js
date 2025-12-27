@@ -35,7 +35,7 @@ function Expenses() {
     } finally {
       setLoading(false);
     }
-  }, [API_URL, token]);
+  }, [token]); // ✅ API_URL REMOVED (THIS FIXES NETLIFY)
 
   // ---------------- ADD / UPDATE ----------------
   const handleSubmit = async (e) => {
@@ -137,12 +137,10 @@ function Expenses() {
     fetchExpenses();
   }, [fetchExpenses]);
 
-  // ---------------- UI ----------------
   return (
     <div>
       <h2>My Expenses</h2>
 
-      {/* FILTER + EXPORT */}
       <div style={{ marginBottom: "15px" }}>
         <label>
           Filter by month:&nbsp;
@@ -170,7 +168,6 @@ function Expenses() {
         </button>
       </div>
 
-      {/* FORM */}
       <form onSubmit={handleSubmit} style={{ marginBottom: "20px" }}>
         <input
           type="number"
@@ -205,7 +202,6 @@ function Expenses() {
 
       <hr />
 
-      {/* LIST */}
       {loading ? (
         <p>Loading expenses...</p>
       ) : filteredExpenses.length === 0 ? (
