@@ -4,14 +4,14 @@ from config import Config
 from extensions import db, jwt
 from routes.analytics import analytics_bp
 
-
 def create_app():
     app = Flask(__name__)
     app.config.from_object(Config)
 
-    # ✅ ENABLE CORS FOR ALL ROUTES (IMPORTANT)
+    # ✅ CORS: allow ONLY Netlify frontend
     CORS(
         app,
+        origins=["https://expensetrackertomanageexpenses.netlify.app"],
         supports_credentials=True,
         allow_headers=["Content-Type", "Authorization"],
         methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
@@ -40,13 +40,13 @@ def create_app():
 app = create_app()
 
 
-# ✅ GLOBAL OPTIONS HANDLER (FIXES PREFLIGHT CORS ERROR)
+# ✅ Preflight handler
 @app.route("/api/<path:path>", methods=["OPTIONS"])
 def options_handler(path):
     return "", 200
 
 
-# ✅ ENSURE HEADERS ARE ALWAYS PRESENT
+# ❌ DO NOT ADD Access-Control-Allow-Origin MANUALLY
 @app.after_request
 def after_request(response):
     response.headers.add(
@@ -56,10 +56,6 @@ def after_request(response):
     response.headers.add(
         "Access-Control-Allow-Methods",
         "GET,POST,PUT,DELETE,OPTIONS"
-    )
-    response.headers.add(
-        "Access-Control-Allow-Origin",
-        "*"
     )
     return response
 
