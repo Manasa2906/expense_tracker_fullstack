@@ -9,108 +9,52 @@ import {
 
 ChartJS.register(ArcElement, Tooltip, Legend);
 
+const API_URL = process.env.REACT_APP_API_URL;
+
 function Analytics() {
-  // ✅ Hooks MUST be at top level
   const token = localStorage.getItem("token");
 
   const [total, setTotal] = useState(0);
   const [categories, setCategories] = useState([]);
-  const [monthly, setMonthly] = useState([]);
-  const [unauthorized, setUnauthorized] = useState(false);
 
   useEffect(() => {
-    if (!token) {
-      setUnauthorized(true);
-      return;
-    }
+    if (!token) return;
 
-    const fetchTotal = async () => {
-      const res = await fetch("https://expense-tracker-backend-74vg.onrender.com/api/analytics/total", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      if (res.status === 401) {
-        setUnauthorized(true);
-        return;
-      }
-
-      const data = await res.json();
-      setTotal(data.total_expense);
+    const headers = {
+      Authorization: `Bearer ${token}`,
     };
 
-    const fetchCategories = async () => {
-      const res = await fetch("https://expense-tracker-backend-74vg.onrender.com/api/analytics/categories", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+    // Fetch total
+    fetch(`${API_URL}/api/analytics/total`, { headers })
+      .then((res) => res.json())
+      .then((data) => setTotal(data.total || 0))
+      .catch(() => setTotal(0));
 
-      if (res.status === 401) {
-        setUnauthorized(true);
-        return;
-      }
-
-      const data = await res.json();
-      setCategories(Array.isArray(data) ? data : []);
-    };
-
-    const fetchMonthly = async () => {
-      const res = await fetch("https://expense-tracker-backend-74vg.onrender.com/api/analytics/monthly", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      if (res.status === 401) {
-        setUnauthorized(true);
-        return;
-      }
-
-      const data = await res.json();
-      setMonthly(Array.isArray(data) ? data : []);
-    };
-
-    fetchTotal();
-    fetchCategories();
-    fetchMonthly();
+    // Fetch categories
+    fetch(`${API_URL}/api/analytics/categories`, { headers })
+      .then((res) => res.json())
+      .then((data) => setCategories(data))
+      .catch(() => setCategories([]));
   }, [token]);
 
-  // ✅ Safe rendering AFTER hooks
-  if (unauthorized) {
-    localStorage.removeItem("token");
-    window.location.reload();
-    return null;
-  }
-
-  const pieData = {
+  const chartData = {
     labels: categories.map((c) => c.category),
     datasets: [
       {
-        data: categories.map((c) => c.total),
-        backgroundColor: [
-          "#FF6384",
-          "#36A2EB",
-          "#FFCE56",
-          "#4CAF50",
-          "#9C27B0",
-        ],
+        data: categories.map((c) => c.amount),
+        backgroundColor: ["#ff6384", "#36a2eb", "#ffce56"],
       },
     ],
   };
 
   return (
-    <div style={{ width: "600px", margin: "40px auto" }}>
+    <div style={{ marginTop: "40px" }}>
       <h2>Analytics Dashboard</h2>
-
       <h3>Total Expense: ₹{total}</h3>
 
-      <h3>Category-wise Spending</h3>
-      {categories.length > 0 ? <Pie data={pieData} /> : <p>No data</p>}
-
-      <h3>Monthly Summary</h3>
-      <ul>
-        {monthly.map((m, index) => (
-          <li key={index}>
-            {m.month} : ₹{m.total}
-          </li>
-        ))}
-      </ul>
+      {categories.length > 0 && (
+        <Pie data={chartData} />
+      )}
     </div>
   );
 }
