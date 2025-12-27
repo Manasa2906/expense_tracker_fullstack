@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 
 function Expenses() {
   const token = localStorage.getItem("token");
@@ -17,26 +17,19 @@ function Expenses() {
   const [selectedMonth, setSelectedMonth] = useState("");
 
   // ---------------- FETCH ----------------
-  const fetchExpenses = async () => {
-    setLoading(true);
+  const fetchExpenses = useCallback(async () => {
+  const token = localStorage.getItem("token");
 
-    const response = await fetch("https://expense-tracker-backend-74vg.onrender.com/api/expenses", {
-      headers: { Authorization: `Bearer ${token}` },
-    });
+  const res = await fetch(`${API_URL}/api/expenses`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
 
-    if (response.status === 401) {
-      localStorage.removeItem("token");
-      window.location.reload();
-      return;
-    }
+  const data = await res.json();
+  setExpenses(data);
+}, []);
 
-    const data = await response.json();
-    const list = Array.isArray(data) ? data : [];
-
-    setExpenses(list);
-    setFilteredExpenses(list);
-    setLoading(false);
-  };
 
   // ---------------- ADD / UPDATE ----------------
   const handleSubmit = async (e) => {
@@ -133,10 +126,9 @@ function Expenses() {
   };
 
   useEffect(() => {
-    if (token) {
-      fetchExpenses();
-    }
-  }, [token]);
+  fetchExpenses();
+}, [fetchExpenses]);
+
 
   return (
     <div>
