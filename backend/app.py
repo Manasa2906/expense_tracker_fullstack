@@ -1,6 +1,5 @@
 from flask import Flask, jsonify
 from flask_cors import CORS
-
 from config import Config
 from extensions import db, jwt
 from routes.auth import auth_bp
@@ -14,12 +13,16 @@ def create_app():
 
     # ✅ APPLY CORS GLOBALLY (CORRECT WAY)
     CORS(
-        app,
-        resources={r"/api/*": {
-            "origins": ["https://expensetrackertomanageexpenses.netlify.app"]
-        }},
-        supports_credentials=True
+    app,
+    resources={r"/api/*": {
+        "origins": [
+            "https://expensetrackertomanageexpenses.netlify.app",
+            "http://localhost:3000"
+        ]
+    }},
+    supports_credentials=True
     )
+
 
     # Init extensions
     db.init_app(app)
