@@ -1,5 +1,7 @@
 import React, { useCallback, useEffect, useState } from "react";
 
+const API_URL = process.env.REACT_APP_API_URL;
+
 function Expenses() {
   const token = localStorage.getItem("token");
 
@@ -16,28 +18,32 @@ function Expenses() {
 
   const [selectedMonth, setSelectedMonth] = useState("");
 
-  // ---------------- FETCH ----------------
+  // ---------------- FETCH EXPENSES ----------------
   const fetchExpenses = useCallback(async () => {
-  const token = localStorage.getItem("token");
+    try {
+      const res = await fetch(`${API_URL}/api/expenses`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
 
-  const res = await fetch(`${API_URL}/api/expenses`, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
-
-  const data = await res.json();
-  setExpenses(data);
-}, []);
-
+      const data = await res.json();
+      setExpenses(data);
+      setFilteredExpenses(data);
+    } catch (error) {
+      console.error("Failed to fetch expenses", error);
+    } finally {
+      setLoading(false);
+    }
+  }, [API_URL, token]);
 
   // ---------------- ADD / UPDATE ----------------
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     const url = isEditing
-      ? `https://expense-tracker-backend-74vg.onrender.com/api/expenses/${editingId}`
-      : "https://expense-tracker-backend-74vg.onrender.com/api/expenses";
+      ? `${API_URL}/api/expenses/${editingId}`
+      : `${API_URL}/api/expenses`;
 
     const method = isEditing ? "PUT" : "POST";
 
@@ -61,9 +67,11 @@ function Expenses() {
 
   // ---------------- DELETE ----------------
   const deleteExpense = async (id) => {
-    await fetch(`https://expense-tracker-backend-74vg.onrender.com/api/expenses/${id}`, {
+    await fetch(`${API_URL}/api/expenses/${id}`, {
       method: "DELETE",
-      headers: { Authorization: `Bearer ${token}` },
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
     });
 
     fetchExpenses();
@@ -109,7 +117,7 @@ function Expenses() {
       e.date,
     ]);
 
-    let csvContent =
+    const csvContent =
       headers.join(",") +
       "\n" +
       rows.map((row) => row.join(",")).join("\n");
@@ -126,15 +134,15 @@ function Expenses() {
   };
 
   useEffect(() => {
-  fetchExpenses();
-}, [fetchExpenses]);
+    fetchExpenses();
+  }, [fetchExpenses]);
 
-
+  // ---------------- UI ----------------
   return (
     <div>
       <h2>My Expenses</h2>
 
-      {/* -------- FILTER + EXPORT -------- */}
+      {/* FILTER + EXPORT */}
       <div style={{ marginBottom: "15px" }}>
         <label>
           Filter by month:&nbsp;
@@ -162,7 +170,7 @@ function Expenses() {
         </button>
       </div>
 
-      {/* -------- FORM -------- */}
+      {/* FORM */}
       <form onSubmit={handleSubmit} style={{ marginBottom: "20px" }}>
         <input
           type="number"
@@ -197,7 +205,7 @@ function Expenses() {
 
       <hr />
 
-      {/* -------- LIST -------- */}
+      {/* LIST */}
       {loading ? (
         <p>Loading expenses...</p>
       ) : filteredExpenses.length === 0 ? (
