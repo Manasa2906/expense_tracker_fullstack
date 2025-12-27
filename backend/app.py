@@ -2,34 +2,31 @@ from flask import Flask
 from flask_cors import CORS
 from config import Config
 from extensions import db, jwt
-from routes.analytics import analytics_bp
 
 def create_app():
     app = Flask(__name__)
     app.config.from_object(Config)
 
-    # ✅ CORS: allow ONLY Netlify frontend
+    # ✅ SINGLE, CORRECT CORS CONFIG
     CORS(
         app,
-        origins=["https://expensetrackertomanageexpenses.netlify.app"],
-        supports_credentials=True,
-        allow_headers=["Content-Type", "Authorization"],
-        methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+        resources={r"/api/*": {
+            "origins": "https://expensetrackertomanageexpenses.netlify.app"
+        }},
+        supports_credentials=True
     )
 
-    # Initialize extensions
     db.init_app(app)
     jwt.init_app(app)
 
-    # Register blueprints
     from routes.auth import auth_bp
     from routes.expenses import expense_bp
+    from routes.analytics import analytics_bp
 
     app.register_blueprint(auth_bp, url_prefix="/api/auth")
     app.register_blueprint(expense_bp, url_prefix="/api/expenses")
     app.register_blueprint(analytics_bp, url_prefix="/api/analytics")
 
-    # Create database tables
     with app.app_context():
         from models import User, Expense
         db.create_all()
@@ -40,24 +37,10 @@ def create_app():
 app = create_app()
 
 
-# ✅ Preflight handler
+# ✅ THIS IS CRITICAL: handle preflight
 @app.route("/api/<path:path>", methods=["OPTIONS"])
 def options_handler(path):
     return "", 200
-
-
-# ❌ DO NOT ADD Access-Control-Allow-Origin MANUALLY
-@app.after_request
-def after_request(response):
-    response.headers.add(
-        "Access-Control-Allow-Headers",
-        "Content-Type,Authorization"
-    )
-    response.headers.add(
-        "Access-Control-Allow-Methods",
-        "GET,POST,PUT,DELETE,OPTIONS"
-    )
-    return response
 
 
 if __name__ == "__main__":
